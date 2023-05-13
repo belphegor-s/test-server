@@ -1,8 +1,10 @@
+require('dotenv').config();
 var XLSX = require("xlsx");
 var workbook = XLSX.readFile("students.xlsx");
 var sheetNameList = workbook.SheetNames;
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -80,6 +82,27 @@ app.post("/api/generateCode", (req, res) => {
     res.status(200).json({ msg: "Code Generated" });
   }
 });
+
+app.get("/api/getIPDetails", async (req, res) => {
+  let success = false, msg = '';
+
+  try {
+    const response = await axios.get(`https://geolocation-db.com/json/${process.env.GEO_LOCATION_API_KEY}`)
+
+    if(response.status === 200) {
+      const data = response.data;
+      msg = 'IP Details fetched successfully';
+      res.status(200).json({success: true, msg, ...data});
+    } else {
+      msg = "Couldn't get the Public IP";
+      res.status(404).json({success, msg});
+    }
+  } catch(e) {
+    console.log(`Error fetching IP Details -> ${e}`);
+    msg = 'Something went wrong! Please try again later.'
+    res.status(500).json({success, msg});
+  }
+})
 
 app.listen(8000, () => {
   console.log("listening on http://localhost:8000");
